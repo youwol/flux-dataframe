@@ -135,7 +135,7 @@ export namespace ModuleRandomDataframe{
                 {}
             )
 
-            const df = new DataFrame(data,  { name: configuration.name } )
+            const df = DataFrame.create( { series: data, userData:{ name: configuration.name } })
             this.output$.next({data:df,context})
         }
     }

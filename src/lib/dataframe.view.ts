@@ -60,11 +60,11 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
     let startIndex$ = new BehaviorSubject(0)
     let bufferSize$ = new BehaviorSubject(100)
     
-    let columns = Array.from(df.series.keys())
+    let columns = Array.from(Object.keys(df.series))
     let chunk$ = combineLatest([startIndex$, bufferSize$]).pipe(
         map(([startIndex, bufferSize]) => {
             
-            let series : Serie<IArray>[]= columns.reduce((acc, name) => [...acc, df.get(name)], [])
+            let series : Serie<IArray>[]= columns.reduce((acc, name) => [...acc, df.series[name]], [])
             let totalRowCount = series[0].length / series[0].itemSize
             if(startIndex+bufferSize > totalRowCount)
                 bufferSize = totalRowCount - startIndex
@@ -129,7 +129,7 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
 export function dataframeJournalView(df: DataFrame | Serie<IArray>) {
 
     if(df instanceof Serie){
-        df = new DataFrame({'Serie':df})
+        df = DataFrame.create({ series:{'Serie':df}})
     }
     let view = dataFrameView(df)
     view.style["max-height"] = "400px"
