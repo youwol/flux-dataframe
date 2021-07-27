@@ -22,6 +22,7 @@ function optionsView(
                     tag: 'input',
                     class: 'mx-2',
                     type: 'number',
+                    style:{width:'10ch'},
                     value: subject$.getValue(),
                     onchange: (ev) => subject$.next(parseInt(ev.target.value))
                 }
@@ -29,7 +30,7 @@ function optionsView(
         }
     }
     return {
-        class: 'd-flex p-2 align-items-center',
+        class: 'd-flex p-2 align-items-center flex-wrap',
         children: [
             elem(startIndex$, 'start'),
             elem(bufferSize$, 'buffer'),
