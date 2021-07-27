@@ -1,6 +1,6 @@
 import {
     Context, BuilderView, Flux, Schema, ModuleFlux, Pipe,
-    expectSome, expect, createEmptyScene, Scene, RenderView
+    expectSome, expect, createEmptyScene, Scene, RenderView, expectInstanceOf
 } from '@youwol/flux-core'
 import { child$, render, VirtualDOM } from '@youwol/flux-view'
 import { Tabs } from '@youwol/fv-tabs'
@@ -35,9 +35,11 @@ export namespace ModuleTablesView {
     }
 
     let contract = expectSome({
-        when: expect({
-            description: "A DataFrame object",
-            when: (d) => d instanceof DataFrame
+        description: "One or multiple of",
+        when:expectInstanceOf<DataFrame>({
+            typeName: "Dataframe",
+            Type: DataFrame,
+            attNames:["df", "dataframe"] 
         })
     })
 
