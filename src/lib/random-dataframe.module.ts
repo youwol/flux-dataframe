@@ -125,7 +125,9 @@ export namespace ModuleRandomDataframe{
                     Type: Float32Array, 
                     count:configuration.rowCount, itemSize:configuration.itemSize, shared: true 
                 })
-                return map(s, (items) => items.map( () => Math.random()) )
+                return configuration.itemSize > 1 
+                    ? map(s, (items) =>  items.map( () => Math.random()) )
+                    : map(s, () =>  Math.random() )
             }
             let data = configuration.getColumnNames().reduce( 
                 (acc,e) => ({
