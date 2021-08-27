@@ -1,44 +1,10 @@
 import { DataFrame, IArray, Serie } from "@youwol/dataframe";
-import { child$, VirtualDOM } from "@youwol/flux-view";
-import { BehaviorSubject, combineLatest } from "rxjs";
+import { child$, HTMLElement$, VirtualDOM } from "@youwol/flux-view";
+import { BehaviorSubject, combineLatest, Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { ModuleTablesView } from "./tables-view.module";
 
 
-
-function optionsView(
-    startIndex$: BehaviorSubject<number>, 
-    bufferSize$:  BehaviorSubject<number>
-    ): VirtualDOM{
-    
-    let elem = (subject$, title) => {
-        return {
-            class: 'd-flex p-2 align-items-center',
-            children: [
-                {
-                    innerText: title
-                },
-                {
-                    tag: 'input',
-                    class: 'mx-2',
-                    type: 'number',
-                    style:{width:'10ch'},
-                    value: subject$.getValue(),
-                    onchange: (ev) => subject$.next(parseInt(ev.target.value))
-                }
-            ]
-        }
-    }
-    return {
-        class: 'd-flex p-2 align-items-center flex-wrap',
-        children: [
-            elem(startIndex$, 'start'),
-            elem(bufferSize$, 'buffer'),
-        ]
-    }
-}
-
-function cellView(data: IArray, options){
+function cellView(data: IArray){
 
     let numberView = (r) =>({ 
         class: 'px-1',
@@ -55,11 +21,55 @@ function cellView(data: IArray, options){
     }
 }
 
+export function tableView(
+    columns: Array<string>, 
+    chunk$: Observable<any>
+    ){
+
+    return {
+        tag: 'table',
+        class: 'fv-color-primary text-center w-100 fv-text-primary',
+        children: [
+            {
+                tag: 'thead',
+                children: [
+                    {
+                        tag: 'tr', class: 'fv-bg-background-alt',
+                        children: [
+                            { tag: 'td', innerText: '', class: 'px-2' },
+                            ...columns.map((col: string) => {
+                                return { tag: 'td', innerText: col, class: 'px-2' }
+                            })]
+                    }
+                ]
+            },
+            child$(
+                chunk$,
+                (chunk) => {
+                    return {
+                        tag: 'tbody',
+                        children: chunk.map(row => {
+
+                            return {
+                                tag: 'tr',
+                                class: 'fv-hover-bg-background-alt',
+                                children: row.map((data) => cellView(data))
+                            }
+                        })
+                    }
+                }
+            )
+        ]
+    }
+}
 
 export function dataFrameView(df: DataFrame): VirtualDOM {
 
     let startIndex$ = new BehaviorSubject(0)
-    let bufferSize$ = new BehaviorSubject(100)
+
+    let rowHeight = 20
+    let windowRowCount = window.screen.height / rowHeight
+    let bufferSize$ = new BehaviorSubject(windowRowCount)
     
     let columns = Array.from(Object.keys(df.series))
     let chunk$ = combineLatest([startIndex$, bufferSize$]).pipe(
@@ -81,46 +91,37 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
         class: 'd-flex flex-column h-100 w-100 fv-bg-background fv-text-primary',
         style:{},
         children: [
-            optionsView(startIndex$, bufferSize$),
             {
-                class: 'flex-grow-1 overflow-auto w-100', style: { 'min-height': '0px' },
+                class: 'flex-grow-1 overflow-auto w-100', 
+                style: { 'min-height': '0px' },
+                onscroll: (ev) => {
+                    startIndex$.next(Math.floor(ev.target.scrollTop / rowHeight))
+                },
                 children: [
                     {
-                        tag: 'table',
-                        class: 'fv-color-primary text-center h-100 w-100 fv-text-primary',
-                        children: [
+                        style:{
+                            height: `${(df.series[columns[0]].count) *rowHeight}px`,
+                            position:'relative'
+                        },
+                        children:[
                             {
-                                tag: 'thead',
-                                children: [
-                                    {
-                                        tag: 'tr', class: 'fv-bg-background-alt',
-                                        children: [
-                                            { tag: 'td', innerText: '', class: 'px-2' },
-                                            ...columns.map((col: string) => {
-                                                return { tag: 'td', innerText: col, class: 'px-2' }
-                                            })]
-                                    }
+                                class:'w-100',
+                                style:{
+                                    position:'sticky',
+                                    left:'0px',
+                                    top:'0px',
+                                    overflow:'hidden',
+                                    pointerEvents: 'none'
+                                },
+                                children:[
+                                    tableView(columns, chunk$)
                                 ]
-                            },
-                            child$(
-                                chunk$,
-                                (chunk) => {
-                                    return {
-                                        tag: 'tbody',
-                                        children: chunk.map(row => {
-
-                                            return {
-                                                tag: 'tr',
-                                                class: 'fv-hover-bg-background-alt',
-                                                children: row.map((data) => cellView(data, {}))
-                                            }
-                                        })
-                                    }
-                                }
-                            )
+                            }
                         ]
                     }
-                ]
+                ],
+                connectedCallback: (elem: HTMLDivElement & HTMLElement$) => {
+                }
 
             }
         ]
