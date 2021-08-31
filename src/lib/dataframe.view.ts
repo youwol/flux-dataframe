@@ -4,6 +4,33 @@ import { BehaviorSubject, combineLatest, Observable } from "rxjs";
 import { map } from "rxjs/operators";
 
 
+function rowHeader(index: number){
+
+    let indexView = (i) =>{
+        if(i<1e6){
+            return { 
+                class: 'px-1',
+                style:{'white-space': 'nowrap'},
+                innerText: i
+            }
+        }
+        return { 
+            class: 'px-1',
+            style:{'white-space': 'nowrap'},
+            innerText: i.toExponential(3)
+        }
+    }
+    return { 
+        tag: 'td', 
+        class: 'px-3 py-2 border fv-bg-background-alt',
+        style:{fontFamily:"fantasy"},
+        children:[{
+            class:'d-flex',
+            children: [indexView(index)],
+        }]
+    }
+}
+
 function cellView(data: IArray){
 
     let numberView = (r) =>({ 
@@ -15,7 +42,7 @@ function cellView(data: IArray){
         tag: 'td', 
         class: 'px-3',
         children:[{
-            class:'d-flex',
+            class:'d-flex justify-content-around',
             children: Array.isArray(data) ? data.map( d =>numberView(d)) : [ numberView(data) ],
         }]
     }
@@ -29,16 +56,24 @@ export function tableView(
     return {
         tag: 'table',
         class: 'fv-color-primary text-center w-100 fv-text-primary',
+        style: {
+            //tableLayout: 'fixed',
+            borderCollapse: 'collapse'
+        },
         children: [
             {
                 tag: 'thead',
                 children: [
                     {
-                        tag: 'tr', class: 'fv-bg-background-alt',
+                        tag: 'tr', class: 'fv-bg-background-alt', 
+                        style:{
+                            fontFamily:'fantasy'
+                        },
                         children: [
-                            { tag: 'td', innerText: '', class: 'px-2' },
+                            { tag: 'th', innerText: '', class: 'px-2 fv-bg-background-alt', 
+                            style:{width:'50px'} },
                             ...columns.map((col: string) => {
-                                return { tag: 'td', innerText: col, class: 'px-2' }
+                                return { tag: 'td', innerText: col, class: 'px-2 border py-1' }
                             })]
                     }
                 ]
@@ -48,12 +83,15 @@ export function tableView(
                 (chunk) => {
                     return {
                         tag: 'tbody',
-                        children: chunk.map(row => {
+                        children: chunk.map( (row,i) => {
 
                             return {
                                 tag: 'tr',
-                                class: 'fv-hover-bg-background-alt',
-                                children: row.map((data) => cellView(data))
+                                class: 'fv-hover-bg-background-alt border py-2' /*+ ( i%2 ? 'fv-bg-background-alt' : 'fv-bg-background')*/,
+                                style: {
+                                    fontFamily:'math'
+                                },
+                                children: [rowHeader(row[0][0])].concat(row.slice(1).map((data) => cellView(data)))
                             }
                         })
                     }
@@ -67,7 +105,7 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
 
     let startIndex$ = new BehaviorSubject(0)
 
-    let rowHeight = 20
+    let rowHeight = 36
     let windowRowCount = window.screen.height / rowHeight
     let bufferSize$ = new BehaviorSubject(windowRowCount)
     
@@ -100,7 +138,7 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
                 children: [
                     {
                         style:{
-                            height: `${(df.series[columns[0]].count) *rowHeight}px`,
+                            height: `${(df.series[columns[0]].count + 2 ) *rowHeight }px`,
                             position:'relative'
                         },
                         children:[
@@ -110,7 +148,6 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
                                     position:'sticky',
                                     left:'0px',
                                     top:'0px',
-                                    overflow:'hidden',
                                     pointerEvents: 'none'
                                 },
                                 children:[
@@ -119,10 +156,7 @@ export function dataFrameView(df: DataFrame): VirtualDOM {
                             }
                         ]
                     }
-                ],
-                connectedCallback: (elem: HTMLDivElement & HTMLElement$) => {
-                }
-
+                ]
             }
         ]
     }

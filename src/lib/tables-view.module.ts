@@ -123,7 +123,9 @@ export namespace ModuleTablesView {
         let tabState = new Tabs.State(tabs$, mdle.selectTabId$)
         let tabView = new Tabs.View({
             state: tabState,
-            contentView: (state, tabData: DfTab) => dataFrameView(tabData.df),
+            contentView: (state, tabData: DfTab) => ({
+                class:'p-3 h-100 fv-bg-background',
+                children:[dataFrameView(tabData.df)] }),
             headerView: (state, tabData: DfTab) => tabHeaderView(tabData),
             class:"h-100 d-flex flex-column"
         } as any)
